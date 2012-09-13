@@ -63,6 +63,11 @@ rectangle =
 
 ## Changelog ##
 
+#### v1.1.0 ####
+
+* Alignment characters are now configurable.
+* Added support for prefixes.
+
 #### v1.0.0 ####
 
 * Initial release.
