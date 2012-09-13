@@ -10,8 +10,8 @@ class ValignCommand(sublime_plugin.TextCommand):
 		line       = view.line(text_point)
 		return view.substr(line)
 	
-	# Expands the set of rows to all of the lines that match the current indentation level,
-	# stopping when it finds an empty line.
+	# Expands the set of rows to all of the lines that match the current indentation level and are
+	# not empty.
 	def expand_rows_to_indentation(self):
 		view        = self.view
 		current_row = self.start_row
@@ -26,7 +26,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 				line_string = self.get_line_string_for_row(current_row)
 				
 				# Stop at empty lines.
-				if not re.search("\S", line_string): break
+				if len(line_string.strip()) == 0: break
 				
 				# Calculate the current indentation level.
 				match               = re.search("^\s+", line_string)
@@ -55,10 +55,13 @@ class ValignCommand(sublime_plugin.TextCommand):
 	# Returns the character to align on based on the start row. Returns None if no proper character
 	# is found.
 	def calculate_alignment_character(self):
-		line_string = self.get_line_string_for_row(self.start_row)
-		if   re.search("=", line_string): self.alignment_char = "="
-		elif re.search(":", line_string): self.alignment_char = ":"
-		else:                             self.alignment_char = None
+		line_string         = self.get_line_string_for_row(self.start_row)
+		self.alignment_char = None
+		
+		for alignment_char in self.alignment_chars:
+			if re.search("\\" + alignment_char["char"], line_string):
+				self.alignment_char = alignment_char
+				break
 	
 	# Adjusts the current alignment range based on the alignment character so that the range
 	# contains only rows that contain the alignment character.
@@ -78,7 +81,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 				if alignment_char == None:
 					if not re.search("\S+\s+\S+", line_string): break
 				else:
-					if not re.search(alignment_char, line_string): break
+					if not re.search("\\" + alignment_char["char"], line_string): break
 				
 				# Add the row.
 				if direction == -1:
@@ -102,18 +105,17 @@ class ValignCommand(sublime_plugin.TextCommand):
 		
 		for row in self.rows:
 			line_string     = self.get_line_string_for_row(row)
-			replace_pattern = None
-			replace_string  = None
+			replace_pattern = ""
+			replace_string  = ""
 			
 			if alignment_char == None:
 				replace_pattern = "(?<=\S)\s+"
 				replace_string  = " "
-			elif alignment_char == "=":
-				replace_pattern = "\s*=\s*"
-				replace_string  = " = "
-			elif alignment_char == ":":
-				replace_pattern = "\s*:\s*"
-				replace_string  = ": "
+			else:
+				replace_pattern = "\s*\\" + alignment_char["char"] + "\s*"
+				if alignment_char["left_space"]: replace_string += " "
+				replace_string += alignment_char["char"]
+				if alignment_char["right_space"]: replace_string += " "
 			
 			match       = re.search(replace_pattern, line_string)
 			column_span = match.span()
@@ -133,10 +135,10 @@ class ValignCommand(sublime_plugin.TextCommand):
 			
 			if alignment_char == None:
 				char_indexes.append(re.search("\S\s", line_string).start() + 1)
-			elif alignment_char == "=":
-				char_indexes.append(re.search(alignment_char, line_string).start())
-			elif alignment_char == ":":
-				char_indexes.append(re.search(alignment_char, line_string).start() + 1)
+			else:
+				char_index = re.search("\\" + alignment_char["char"], line_string).start()
+				if alignment_char["alignment"] == "left": char_index += 1
+				char_indexes.append(char_index)
 		
 		# Grab the max character index.
 		max_char_index = max(char_indexes)
@@ -148,11 +150,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 			char_index          = char_indexes[i]
 			extra_spaces_needed = max_char_index - char_index
 			line_string         = self.get_line_string_for_row(row)
-			
-			if alignment_char == None:
-				view.insert(edit, view.text_point(row, 0) + char_index, " " * extra_spaces_needed)
-			else:
-				view.insert(edit, view.text_point(row, 0) + char_index, " " * extra_spaces_needed)
+			view.insert(edit, view.text_point(row, 0) + char_index, " " * extra_spaces_needed)
 	
 	# Runs the command.
 	def run(self, edit):
@@ -165,10 +163,12 @@ class ValignCommand(sublime_plugin.TextCommand):
 		if len(selection) != 1: return
 		
 		# Store some useful stuff.
-		self.lines      = view.lines(selection[0])
-		self.start_row  = view.rowcol(self.lines[0].a)[0]
-		self.tab_size   = int(settings.get("tab_size", 8))
-		self.use_spaces = settings.get("translate_tabs_to_spaces")
+		self.lines           = view.lines(selection[0])
+		self.start_row       = view.rowcol(self.lines[0].a)[0]
+		self.tab_size        = int(settings.get("tab_size", 8))
+		self.use_spaces      = settings.get("translate_tabs_to_spaces")
+		self.alignment_chars = settings.get("alignment_chars")
+		self.align_words     = settings.get("align_words")
 		
 		# Bail if our start row is empty.
 		if len(self.get_line_string_for_row(self.start_row).strip()) == 0: return
@@ -179,7 +179,8 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.calculate_alignment_character()
 		self.adjust_rows_for_alignment_character()
 		
-		print(self.rows)
+		# Bail if we have no alignment character and we don't align words.
+		if self.alignment_char is None and not self.align_words: return
 		
 		# Normalize the rows to get consistent formatting for alignment.
 		self.normalize_rows(edit)
