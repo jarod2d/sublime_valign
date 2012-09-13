@@ -1,1 +1,5 @@
-{ "url": "http://github.com/jlong64/sublime_valign", "version": "0.0.0", "description": "Flexible vertical alignment." }
+{
+	"version":     "1.0.0",
+	"url":         "http://github.com/jlong64/sublime_valign",
+	"description": "Flexible vertical alignment."
+}
