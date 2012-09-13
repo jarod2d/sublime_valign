@@ -114,8 +114,16 @@ class ValignCommand(sublime_plugin.TextCommand):
 			else:
 				replace_pattern = "\s*\\" + alignment_char["char"] + "\s*"
 				if alignment_char["left_space"]: replace_string += " "
+				
+				for prefix in alignment_char["prefixes"]:
+					if re.search("\\" + prefix + "\\" + alignment_char["char"], line_string):
+						replace_pattern = "\s*\\" + prefix + alignment_char["char"] + "\s*"
+						replace_string += prefix
+						break
+				
 				replace_string += alignment_char["char"]
 				if alignment_char["right_space"]: replace_string += " "
+				
 			
 			match       = re.search(replace_pattern, line_string)
 			column_span = match.span()
@@ -128,29 +136,45 @@ class ValignCommand(sublime_plugin.TextCommand):
 		rows           = self.rows
 		alignment_char = self.alignment_char
 		char_indexes   = []
+		max_char_index = None
 		
 		# Gather all of the character indexes.
 		for row in rows:
 			line_string = self.get_line_string_for_row(row)
+			index       = 0
+			has_prefix  = False
 			
 			if alignment_char == None:
-				char_indexes.append(re.search("\S\s", line_string).start() + 1)
+				index = re.search("\S\s", line_string).start() + 1
 			else:
-				char_index = re.search("\\" + alignment_char["char"], line_string).start()
-				if alignment_char["alignment"] == "left": char_index += 1
-				char_indexes.append(char_index)
-		
-		# Grab the max character index.
-		max_char_index = max(char_indexes)
-		max_char_row   = char_indexes.index(max_char_index)
+				index = re.search("\\" + alignment_char["char"], line_string).start()
+				
+				for prefix in alignment_char["prefixes"]:
+					if line_string[index - 1] == prefix:
+						index     -= 1
+						has_prefix = True
+						break
+				
+				if alignment_char["alignment"] == "left": index += 1
+			
+			char_index = { "index": index, "has_prefix": has_prefix }
+			char_indexes.append(char_index)
+			
+			if not max_char_index or index > max_char_index["index"]: max_char_index = char_index
 		
 		# Do the alignment!
 		for i in range(len(rows)):
 			row                 = rows[i]
 			char_index          = char_indexes[i]
-			extra_spaces_needed = max_char_index - char_index
+			extra_spaces_needed = max_char_index["index"] - char_index["index"]
 			line_string         = self.get_line_string_for_row(row)
-			view.insert(edit, view.text_point(row, 0) + char_index, " " * extra_spaces_needed)
+			
+			if char_index["has_prefix"]:
+				if not max_char_index["has_prefix"]: extra_spaces_needed -= 1
+			else:
+				if max_char_index["has_prefix"]: extra_spaces_needed += 1
+			
+			view.insert(edit, view.text_point(row, 0) + char_index["index"], " " * extra_spaces_needed)
 	
 	# Runs the command.
 	def run(self, edit):
