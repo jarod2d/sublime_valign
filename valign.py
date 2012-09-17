@@ -13,16 +13,15 @@ class ValignCommand(sublime_plugin.TextCommand):
 	# Expands the set of rows to all of the lines that match the current indentation level and are
 	# not empty.
 	def expand_rows_to_indentation(self):
-		view        = self.view
-		current_row = self.start_row
-		rows        = self.rows
-		indentation = -1
+		view          = self.view
+		current_row   = self.start_row
+		rows          = self.rows
+		line_count, _ = self.view.rowcol(self.view.size())
+		indentation   = -1
 		
 		# Expand upward and then downward from the selection.
 		for direction in [-1, 1]:
-			# TODO: Also need to check if current_row is < the total line count in the file. Not
-			# sure how to get that value yet.
-			while current_row >= 0:
+			while current_row >= 0 and current_row < line_count + 1:
 				line_string = self.get_line_string_for_row(current_row)
 				
 				# Stop at empty lines.
