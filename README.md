@@ -63,6 +63,11 @@ rectangle =
 
 ## Changelog ##
 
+#### v1.1.1 ####
+
+* Fixed a crash that happened when aligning lines at the end of a file.
+* Namespaced settings to avoid conflicts with other plugins.
+
 #### v1.1.0 ####
 
 * Alignment characters are now configurable.
