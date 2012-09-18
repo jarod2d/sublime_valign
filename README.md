@@ -61,6 +61,12 @@ rectangle =
 	padding      5px
 ```
 
+
+## Installation ##
+
+Installation is simple with the [Sublime Package Control](http://wbond.net/sublime_packages/package_control) plugin. Just open the command palette, choose "Install Package" and search for "Valign".
+
+
 ## Changelog ##
 
 #### v1.1.1 ####
