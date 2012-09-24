@@ -4,6 +4,8 @@ A plugin for Sublime Text 2 that adds a shortcut to easily vertically-align the 
 
 This plugin is originally based on [wbond](https://github.com/wbond/)'s [Alignment](https://github.com/wbond/sublime_alignment) plugin.
 
+The primary feature that this plugin offers over Alignment is intelligent alignment based on context. With other plugins, you need to explicitly highlight the lines of code that you want to align. That's not necessary with VAlign -- it will investigate the code surrounding the cursor and figure out which lines to align for you. This makes alignment very quick and simple.
+
 
 ## Examples ##
 
