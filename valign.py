@@ -34,6 +34,12 @@ class ValignCommand(sublime_plugin.TextCommand):
 				
 				if self.use_spaces: current_indentation /= self.tab_size
 				
+				# A bit of a hacky fix for issue #7: in JavaScript, we'll treat "var " at the
+				# beginning of a line as another level of indentation to allow alignment of common
+				# JavaScript formatting conventions. In the future we'll extract this out into a
+				# more general solution.
+				if re.search("^\s*var ", line_string): current_indentation += 1
+				
 				# Append or prepend rows and break when we hit inconsistent indentation.
 				if indentation == -1:
 					indentation = current_indentation

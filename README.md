@@ -1,4 +1,4 @@
-# Sublime VAlign #
+# Sublime VAlign
 
 A plugin for Sublime Text 2 that adds a shortcut to easily vertically-align the text around the cursor. Just press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) and the code around you will align itself.
 
@@ -6,8 +6,7 @@ This plugin is originally based on [wbond](https://github.com/wbond/)'s [Alignme
 
 The primary feature that this plugin offers over Alignment is intelligent alignment based on context. With other plugins, you need to explicitly highlight the lines of code that you want to align. That's not necessary with VAlign -- it will investigate the code surrounding the cursor and figure out which lines to align for you. This makes alignment very quick and simple.
 
-
-## Examples ##
+## Examples
 
 **From:**
 ```
@@ -63,30 +62,31 @@ rectangle =
 	padding      5px
 ```
 
-
-## Installation ##
+## Installation
 
 Installation is simple with the [Sublime Package Control](http://wbond.net/sublime_packages/package_control) plugin. Just open the command palette, choose "Install Package" and search for "Valign".
 
+## Changelog
 
-## Changelog ##
+#### v1.1.2
 
-#### v1.1.1 ####
+* Improved alignment support in JavaScript with "var" prefixes.
+
+#### v1.1.1
 
 * Fixed a crash that happened when aligning lines at the end of a file.
 * Namespaced settings to avoid conflicts with other plugins.
 
-#### v1.1.0 ####
+#### v1.1.0
 
 * Alignment characters are now configurable.
 * Added support for prefixes.
 
-#### v1.0.0 ####
+#### v1.0.0
 
 * Initial release.
 
-
-## License ##
+## License
 
 Copyright (c) 2012 Jarod Long
 
