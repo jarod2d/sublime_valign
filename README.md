@@ -68,6 +68,10 @@ Installation is simple with the [Sublime Package Control](http://wbond.net/subli
 
 ## Changelog
 
+#### v1.1.3
+
+* Added support for Sublime Text 3 by changing the way default preference values are loaded.
+
 #### v1.1.2
 
 * Improved alignment support in JavaScript with "var" prefixes.
