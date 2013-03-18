@@ -199,6 +199,14 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.align_words     = settings.get("va_align_words", True)
 		self.alignment_chars = settings.get("va_alignment_chars", [
 			{
+				# PHP arrays
+				"char":        "=>",
+				"alignment":   "right",
+				"left_space":  True,
+				"right_space": True,
+				"prefixes":    []
+			},
+			{
 				"char":        "=",
 				"alignment":   "right",
 				"left_space":  True,
