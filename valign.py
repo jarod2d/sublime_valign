@@ -2,6 +2,8 @@ import sublime
 import sublime_plugin
 import re
 
+valign_settings = sublime.load_settings("VAlign.sublime-settings")
+
 class ValignCommand(sublime_plugin.TextCommand):
 	# Returns the line string for the given row.
 	def get_line_string_for_row(self, row):
@@ -196,31 +198,34 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.start_row       = view.rowcol(self.lines[0].a)[0]
 		self.tab_size        = int(settings.get("tab_size", 8))
 		self.use_spaces      = settings.get("translate_tabs_to_spaces")
-		self.align_words     = settings.get("va_align_words", True)
-		self.alignment_chars = settings.get("va_alignment_chars", [
-			{
-				# PHP arrays
-				"char":        "=>",
-				"alignment":   "right",
-				"left_space":  True,
-				"right_space": True,
-				"prefixes":    []
-			},
-			{
-				"char":        "=",
-				"alignment":   "right",
-				"left_space":  True,
-				"right_space": True,
-				"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", "."]
-			},
-			{
-				"char":        ":",
-				"alignment":   "left",
-				"left_space":  False,
-				"right_space": True,
-				"prefixes":    []
-			}
-		])
+		# Get settings from the VAlign setting file
+		self.align_words     = valign_settings.get("align_words", settings.get("va_align_words", True))
+		self.alignment_chars = valign_settings.get("alignment_chars",
+			settings.get("va_alignment_chars", [
+				{
+					# PHP arrays
+					"char":        "=>",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    []
+				},
+				{
+					"char":        "=",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", "."]
+				},
+				{
+					"char":        ":",
+					"alignment":   "left",
+					"left_space":  False,
+					"right_space": True,
+					"prefixes":    []
+				}
+			])
+		)
 		
 		# Bail if our start row is empty.
 		if len(self.get_line_string_for_row(self.start_row).strip()) == 0: return
