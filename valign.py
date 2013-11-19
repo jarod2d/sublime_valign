@@ -2,6 +2,14 @@ import sublime
 import sublime_plugin
 import re
 
+# This function removes the duplicates from a list and returns a new list without them
+# It also preserves the order of the list
+def ordered_remove_duplicates(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]
+
+
 class ValignCommand(sublime_plugin.TextCommand):
 	# Returns the line string for the given row.
 	def get_line_string_for_row(self, row):
@@ -261,10 +269,12 @@ class ValignCommand(sublime_plugin.TextCommand):
 			# Filter the rows if they contain the alignment character
 			calculated_rows = self.adjust_rows_for_alignment_character(calculated_rows, start_row)
 
-			# Add the filtered rows to the rows property
+			# Add the filtered rows to the rows
 			self.rows.extend(calculated_rows)
 
-		print(self.rows)
+
+		# Bail that there are not duplicates in the rows
+		self.rows = ordered_remove_duplicates(self.rows)
 
 		# Bail if we have no rows
 		if len(self.rows) == 0: return
