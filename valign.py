@@ -12,11 +12,10 @@ class ValignCommand(sublime_plugin.TextCommand):
 
 	# Expands the set of rows to all of the lines that match the current indentation level and are
 	# not empty; except the stop_empty option is false
-	def expand_rows_to_indentation(self):
+	def expand_rows_to_indentation(self, start_row):
 		view          = self.view
-		current_row   = self.start_row
-		next_row      = current_row
-		rows          = self.rows
+		current_row   = next_row = start_row
+		rows          = [ start_row ]
 		line_count, _ = self.view.rowcol(self.view.size())
 		indentation   = -1
 
@@ -62,13 +61,15 @@ class ValignCommand(sublime_plugin.TextCommand):
 						rows.append(current_row)
 
 			# Reset the current row for moving downward.
-			current_row = rows[len(rows) - 1] + 1
-			next_row    = current_row
+			current_row = next_row = rows[len(rows) - 1] + 1
+
+		# Return the calculated rows
+		return rows
 
 	# Returns the character to align on based on the start row. Returns None if no proper character
 	# is found.
-	def calculate_alignment_character(self):
-		line_string         = self.get_line_string_for_row(self.start_row)
+	def calculate_alignment_character(self, row):
+		line_string         = self.get_line_string_for_row(row)
 		self.alignment_char = None
 
 		for alignment_char in self.alignment_chars:
@@ -78,11 +79,10 @@ class ValignCommand(sublime_plugin.TextCommand):
 
 	# Adjusts the current alignment range based on the alignment character so that the range
 	# contains only rows that contain the alignment character.
-	def adjust_rows_for_alignment_character(self):
-		rows           = self.rows
+	def adjust_rows_for_alignment_character(self, rows, start_row):
 		adjusted_rows  = []
 		alignment_char = self.alignment_char
-		start_i        = i = rows.index(self.start_row)
+		start_i        = i = rows.index(start_row)
 
 		# Check upward and then downward from the start row.
 		for direction in [-1, 1]:
@@ -108,8 +108,8 @@ class ValignCommand(sublime_plugin.TextCommand):
 			# Reset i.
 			i = start_i + 1
 
-		# Set the new adjusted rows.
-		self.rows = adjusted_rows
+		# Return the new adjusted rows.
+		return adjusted_rows
 
 	# Normalizes the rows, creating a consistent format for alignment.
 	def normalize_rows(self, edit):
@@ -194,19 +194,13 @@ class ValignCommand(sublime_plugin.TextCommand):
 		view      = self.view
 		selection = self.selection = view.sel()
 		settings  = self.settings  = view.settings()
-		lines     = self.lines     = view.lines(selection[0])
+
+		# Get the "main" row; the row with the main cursor
+		main_row = view.rowcol(view.lines(selection[0])[0].a)[0]
 
 		# Load the settings from the user file
 		valign_settings = sublime.load_settings("VAlign.sublime-settings")
 
-		# We don't align multi-selections yet.
-		if len(selection) != 1: return
-
-		# Store some useful stuff.
-		self.lines           = view.lines(selection[0])
-		self.start_row       = view.rowcol(self.lines[0].a)[0]
-		self.tab_size        = int(settings.get("tab_size", 8))
-		self.use_spaces      = settings.get("translate_tabs_to_spaces")
 		# Get settings from the VAlign setting file
 		self.align_words     = valign_settings.get("align_words", settings.get("va_align_words", True))
 		self.alignment_chars = valign_settings.get("alignment_chars",
@@ -236,18 +230,44 @@ class ValignCommand(sublime_plugin.TextCommand):
 			])
 		)
 		self.stop_empty = valign_settings.get("stop_empty", settings.get("va_stop_empty", True))
+		# Get global settings
+		self.tab_size   = int(settings.get("tab_size", 8))
+		self.use_spaces = settings.get("translate_tabs_to_spaces")
 
-		# Bail if our start row is empty.
-		if len(self.get_line_string_for_row(self.start_row).strip()) == 0: return
 
-		# Calculate the rows that will be affected by the alignment.
-		self.rows = [self.start_row]
-		self.expand_rows_to_indentation()
-		self.calculate_alignment_character()
-		self.adjust_rows_for_alignment_character()
+		# Look for the alignment character
+		self.calculate_alignment_character(main_row)
 
 		# Bail if we have no alignment character and we don't align words.
 		if self.alignment_char is None and not self.align_words: return
+
+
+		self.rows = []
+		# Iterate through the selections and get the valid rows; processes multi selection
+		for select in selection:
+			# Store some useful stuff.
+			lines     = view.lines(select)
+			start_row = view.rowcol(lines[0].a)[0]
+
+			# Bail if the start row is already in the rows array.
+			if start_row in self.rows: continue
+
+			# Bail if our start row is empty.
+			if len(self.get_line_string_for_row(start_row).strip()) == 0: continue
+
+			# Calculate the rows that are on the same indentation level
+			calculated_rows = self.expand_rows_to_indentation(start_row)
+
+			# Filter the rows if they contain the alignment character
+			calculated_rows = self.adjust_rows_for_alignment_character(calculated_rows, start_row)
+
+			# Add the filtered rows to the rows property
+			self.rows.extend(calculated_rows)
+
+		print(self.rows)
+
+		# Bail if we have no rows
+		if len(self.rows) == 0: return
 
 		# Normalize the rows to get consistent formatting for alignment.
 		self.normalize_rows(edit)
