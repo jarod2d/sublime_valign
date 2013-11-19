@@ -2,6 +2,8 @@ import sublime
 import sublime_plugin
 import re
 
+valign_settings = sublime.load_settings("VAlign.sublime-settings")
+
 class ValignCommand(sublime_plugin.TextCommand):
 	# Returns the line string for the given row.
 	def get_line_string_for_row(self, row):
@@ -11,10 +13,11 @@ class ValignCommand(sublime_plugin.TextCommand):
 		return view.substr(line)
 	
 	# Expands the set of rows to all of the lines that match the current indentation level and are
-	# not empty.
+	# not empty; except the stop_empty option is false
 	def expand_rows_to_indentation(self):
 		view          = self.view
 		current_row   = self.start_row
+		next_row      = current_row
 		rows          = self.rows
 		line_count, _ = self.view.rowcol(self.view.size())
 		indentation   = -1
@@ -22,10 +25,19 @@ class ValignCommand(sublime_plugin.TextCommand):
 		# Expand upward and then downward from the selection.
 		for direction in [-1, 1]:
 			while current_row >= 0 and current_row < line_count + 1:
+				# Set current_row on the next row; this does nothing for the first iteration but
+				# increments current_row later on. This is necessary to ensure a correct
+				# functionality of the "continue" statement
+				current_row = next_row
+				# Increment next_row for the next iteration
+				next_row += direction
+
 				line_string = self.get_line_string_for_row(current_row)
 				
-				# Stop at empty lines.
-				if len(line_string.strip()) == 0: break
+				# Stop at empty lines or skip them.
+				if len(line_string.strip()) == 0:
+					if self.stop_empty: break
+					else: continue
 				
 				# Calculate the current indentation level.
 				match               = re.search("^\s+", line_string)
@@ -50,12 +62,10 @@ class ValignCommand(sublime_plugin.TextCommand):
 						rows.insert(0, current_row)
 					else:
 						rows.append(current_row)
-				
-				# Move on to the next row.
-				current_row += direction
 			
 			# Reset the current row for moving downward.
 			current_row = rows[len(rows) - 1] + 1
+			next_row    = current_row
 	
 	# Returns the character to align on based on the start row. Returns None if no proper character
 	# is found.
@@ -196,31 +206,35 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.start_row       = view.rowcol(self.lines[0].a)[0]
 		self.tab_size        = int(settings.get("tab_size", 8))
 		self.use_spaces      = settings.get("translate_tabs_to_spaces")
-		self.align_words     = settings.get("va_align_words", True)
-		self.alignment_chars = settings.get("va_alignment_chars", [
-			{
-				# PHP arrays
-				"char":        "=>",
-				"alignment":   "right",
-				"left_space":  True,
-				"right_space": True,
-				"prefixes":    []
-			},
-			{
-				"char":        "=",
-				"alignment":   "right",
-				"left_space":  True,
-				"right_space": True,
-				"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", "."]
-			},
-			{
-				"char":        ":",
-				"alignment":   "left",
-				"left_space":  False,
-				"right_space": True,
-				"prefixes":    []
-			}
-		])
+		# Get settings from the VAlign setting file
+		self.align_words     = valign_settings.get("align_words", settings.get("va_align_words", True))
+		self.alignment_chars = valign_settings.get("alignment_chars",
+			settings.get("va_alignment_chars", [
+				{
+					# PHP arrays
+					"char":        "=>",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    []
+				},
+				{
+					"char":        "=",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", "."]
+				},
+				{
+					"char":        ":",
+					"alignment":   "left",
+					"left_space":  False,
+					"right_space": True,
+					"prefixes":    []
+				}
+			])
+		)
+		self.stop_empty = valign_settings.get("stop_empty", settings.get("va_stop_empty", True))
 		
 		# Bail if our start row is empty.
 		if len(self.get_line_string_for_row(self.start_row).strip()) == 0: return
