@@ -66,6 +66,14 @@ rectangle =
 
 Installation is simple with the [Sublime Package Control](http://wbond.net/sublime_packages/package_control) plugin. Just open the command palette, choose "Install Package" and search for "Valign".
 
+## Usage
+
+Press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) to align the code surrounding the cursor. The keyboard shortcut can be changed by adding the following to your user keybindings file, changing `"ctrl+\\"` to your shortcut of choice:
+
+```
+{ "keys": ["ctrl+\\"], "command": "valign" }
+```
+
 ## Changelog
 
 #### v1.1.3
