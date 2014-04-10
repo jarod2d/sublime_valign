@@ -76,6 +76,10 @@ Press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) to align the code surrounding th
 
 ## Changelog
 
+#### v1.1.4
+
+* Added support for aligning double equals, triple equals, and CoffeeScript ?=
+
 #### v1.1.3
 
 * Added support for Sublime Text 3 by changing the way default preference values are loaded.

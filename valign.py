@@ -222,11 +222,18 @@ class ValignCommand(sublime_plugin.TextCommand):
 					"prefixes":    []
 				},
 				{
+					"char":        "===",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    []
+				},
+				{
 					"char":        "=",
 					"alignment":   "right",
 					"left_space":  True,
 					"right_space": True,
-					"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", "."]
+					"prefixes":    ["+", "-", "&", "|", "<", ">", "!", "~", "%", "/", "*", ".", "?", "="]
 				},
 				{
 					"char":        ":",
