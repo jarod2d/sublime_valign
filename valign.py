@@ -55,7 +55,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 				# beginning of a line as another level of indentation to allow alignment of common
 				# JavaScript formatting conventions. In the future we'll extract this out into a
 				# more general solution.
-				if re.search("^\s*var ", line_string): current_indentation += 1
+				if self.treat_var_as_indent and re.search("^\s*var ", line_string): current_indentation += 1
 
 				# Append or prepend rows and break when we hit inconsistent indentation.
 				if indentation == -1:
@@ -244,50 +244,46 @@ class ValignCommand(sublime_plugin.TextCommand):
 				}
 			])
 		)
-		self.stop_empty = valign_settings.get("stop_empty", settings.get("va_stop_empty", True))
-		# Get global settings
-		self.tab_size   = int(settings.get("tab_size", 8))
-		self.use_spaces = settings.get("translate_tabs_to_spaces")
-
-
-		# Look for the alignment character
+		
+		self.stop_empty          = valign_settings.get("stop_empty", settings.get("va_stop_empty", True))
+		self.tab_size            = int(settings.get("tab_size", 8))
+		self.use_spaces          = settings.get("translate_tabs_to_spaces")
+		self.treat_var_as_indent = settings.get("treat_var_as_indent", False)
+		
 		self.calculate_alignment_character(main_row)
-
-		# Bail if we have no alignment character and we don't align words.
+		
 		if self.alignment_char is None and not self.align_words: return
-
-
+		
 		self.rows = []
-		# Iterate through the selections and get the valid rows; processes multi selection
+		
 		for select in selection:
 			# Store some useful stuff.
 			lines     = view.lines(select)
 			start_row = view.rowcol(lines[0].a)[0]
-
+			
 			# Bail if the start row is already in the rows array.
 			if start_row in self.rows: continue
-
+			
 			# Bail if our start row is empty.
 			if len(self.get_line_string_for_row(start_row).strip()) == 0: continue
-
+			
 			# Calculate the rows that are on the same indentation level
 			calculated_rows = self.expand_rows_to_indentation(start_row)
-
+			
 			# Filter the rows if they contain the alignment character
 			calculated_rows = self.adjust_rows_for_alignment_character(calculated_rows, start_row)
-
+			
 			# Add the filtered rows to the rows
 			self.rows.extend(calculated_rows)
-
-
+		
 		# Bail that there are not duplicates in the rows
 		self.rows = ordered_remove_duplicates(self.rows)
-
+		
 		# Bail if we have no rows
 		if len(self.rows) == 0: return
-
+		
 		# Normalize the rows to get consistent formatting for alignment.
 		self.normalize_rows(edit)
-
+		
 		# If we have valid rows, align them.
 		if len(self.rows) > 0: self.align_rows(edit)

@@ -76,6 +76,10 @@ Press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) to align the code surrounding th
 
 ## Changelog
 
+#### v1.1.5
+
+* "var" prefixes are now only treated as an indent if the new setting "treat_var_as_indent" is true.
+
 #### v1.1.4
 
 * Added support for aligning double equals, triple equals, and CoffeeScript ?=
