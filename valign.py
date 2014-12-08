@@ -18,58 +18,62 @@ class ValignCommand(sublime_plugin.TextCommand):
 		line       = view.line(text_point)
 		return view.substr(line)
 
+	# Calculates the indentation level of a row
+	def get_indentation_for_row(self, row):
+		line_string = self.get_line_string_for_row(row)
+
+		# Skip empty lines
+		if len(line_string.strip()) == 0: return None
+
+		# Calculate indentation
+		match              = re.search("^\s+", line_string)
+		indentation_string = match.group(0) if match else None
+		indentation        = len(indentation_string) if indentation_string else 0
+
+		if self.use_spaces: indentation /= self.tab_size
+
+		# A bit of a hacky fix for issue #7: in JavaScript, we'll treat "var " at the
+		# beginning of a line as another level of indentation to allow alignment of common
+		# JavaScript formatting conventions. In the future we'll extract this out into a
+		# more general solution.
+		if self.treat_var_as_indent and re.search("^\s*var ", line_string): indentation += 1
+
+		return indentation
+
 	# Expands the set of rows to all of the lines that match the current indentation level and are
 	# not empty; except the stop_empty option is false
 	def expand_rows_to_indentation(self, start_row):
-		view          = self.view
-		current_row   = next_row = start_row
-		rows          = [ start_row ]
-		line_count, _ = self.view.rowcol(self.view.size())
-		indentation   = -1
+		line_count, _     = self.view.rowcol(self.view.size())
+		start_indentation = self.get_indentation_for_row(start_row)
+		rows              = [ start_row ]
 
 		# Expand upward and then downward from the selection.
 		for direction in [-1, 1]:
-			while current_row >= 0 and current_row < line_count + 1:
-				# Set current_row on the next row; this does nothing for the first iteration but
-				# increments current_row later on. This is necessary to ensure a correct
-				# functionality of the "continue" statement
-				current_row = next_row
-				# Increment next_row for the next iteration
-				next_row += direction
-
-				line_string = self.get_line_string_for_row(current_row)
+			row = start_row + direction
+			while row >= 0 and row < line_count + 1:
+				# Calculate the current indentation level.
+				row_indentation = self.get_indentation_for_row(row)
 
 				# Stop at empty lines or skip them.
-				if len(line_string.strip()) == 0:
-					if self.stop_empty: break
-					else: continue
-
-				# Calculate the current indentation level.
-				match               = re.search("^\s+", line_string)
-				indentation_string  = match.group(0) if match else None
-				current_indentation = len(indentation_string) if indentation_string else 0
-
-				if self.use_spaces: current_indentation /= self.tab_size
-
-				# A bit of a hacky fix for issue #7: in JavaScript, we'll treat "var " at the
-				# beginning of a line as another level of indentation to allow alignment of common
-				# JavaScript formatting conventions. In the future we'll extract this out into a
-				# more general solution.
-				if self.treat_var_as_indent and re.search("^\s*var ", line_string): current_indentation += 1
+				if row_indentation is None:
+					if self.stop_empty:
+						break
+					else:
+						row += direction
+						continue
 
 				# Append or prepend rows and break when we hit inconsistent indentation.
-				if indentation == -1:
-					indentation = current_indentation
-				elif current_indentation != indentation:
+				if row_indentation != start_indentation:
 					break
-				else:
-					if direction is -1:
-						rows.insert(0, current_row)
-					else:
-						rows.append(current_row)
 
-			# Reset the current row for moving downward.
-			current_row = next_row = rows[len(rows) - 1] + 1
+				# Add row to the return value
+				if direction is -1:
+					rows.insert(0, row)
+				else:
+					rows.append(row)
+
+				# Next row
+				row += direction
 
 		# Return the calculated rows
 		return rows
