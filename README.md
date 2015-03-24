@@ -1,6 +1,6 @@
 # Sublime VAlign
 
-A plugin for Sublime Text 2 that adds a shortcut to easily vertically-align the text around the cursor. Just press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) and the code around you will align itself.
+A plugin for Sublime Text 2 and 3 that adds a shortcut to easily vertically-align the text around the cursor. Just press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) and the code around you will align itself.
 
 This plugin is originally based on [wbond](https://github.com/wbond/)'s [Alignment](https://github.com/wbond/sublime_alignment) plugin.
 
