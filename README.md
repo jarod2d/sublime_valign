@@ -76,6 +76,11 @@ Press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) to align the code surrounding th
 
 ## Changelog
 
+#### v1.1.6
+
+* Added support for aligning by arbitrary strings and added a built-in rule to align by the word "from" (thanks @GerritSommer!)
+* Fixed an issue with alignment involving the first line of the file (thanks @davejamesmiller!)
+
 #### v1.1.5
 
 * "var" prefixes are now only treated as an indent if the new setting "treat_var_as_indent" is true.
