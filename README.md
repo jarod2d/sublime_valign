@@ -78,8 +78,8 @@ Press `Cmd+\` (Mac) or `Ctrl+\` (Windows/Linux) to align the code surrounding th
 
 #### v1.1.6
 
-* Added support for aligning by arbitrary strings and added a built-in rule to align by the word "from" (thanks @GerritSommer!)
-* Fixed an issue with alignment involving the first line of the file (thanks @davejamesmiller!)
+* Added support for aligning by arbitrary strings and added a built-in rule to align by the word "from" (thanks [GerritSommer](https://github.com/GerritSommer/)!)
+* Fixed an issue with alignment involving the first line of the file (thanks [davejamesmiller](https://github.com/davejamesmiller/)!)
 
 #### v1.1.5
 
