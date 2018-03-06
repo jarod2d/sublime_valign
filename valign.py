@@ -85,7 +85,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.alignment_char = None
 
 		for alignment_char in self.alignment_chars:
-			if re.search("\\" + alignment_char["char"], line_string):
+			if re.search(re.escape(alignment_char["char"]), line_string):
 				self.alignment_char = alignment_char
 				break
 
@@ -106,7 +106,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 				if alignment_char == None:
 					if not re.search("\S+\s+\S+", line_string): break
 				else:
-					if not re.search("\\" + alignment_char["char"], line_string): break
+					if not re.search(re.escape(alignment_char["char"]), line_string): break
 
 				# Add the row.
 				if direction == -1:
@@ -137,12 +137,12 @@ class ValignCommand(sublime_plugin.TextCommand):
 				replace_pattern = "(?<=\S)\s+"
 				replace_string  = " "
 			else:
-				replace_pattern = "\s*\\" + alignment_char["char"] + "\s*"
+				replace_pattern = "\s*" + re.escape(alignment_char["char"]) + "\s*"
 				if alignment_char["left_space"]: replace_string += " "
 
 				for prefix in alignment_char["prefixes"]:
-					if re.search("\\" + prefix + "\\" + alignment_char["char"], line_string):
-						replace_pattern = "\s*\\" + prefix + alignment_char["char"] + "\s*"
+					if re.search("\\" + prefix + re.escape(alignment_char["char"]), line_string):
+						replace_pattern = "\s*" + re.escape(prefix) + re.escape(alignment_char["char"]) + "\s*"
 						replace_string += prefix
 						break
 
@@ -172,7 +172,7 @@ class ValignCommand(sublime_plugin.TextCommand):
 			if alignment_char == None:
 				index = re.search("\S\s", line_string).start() + 1
 			else:
-				index = re.search("\\" + alignment_char["char"], line_string).start()
+				index = re.search(re.escape(alignment_char["char"]), line_string).start()
 
 				for prefix in alignment_char["prefixes"]:
 					if line_string[index - 1] == prefix:
@@ -218,6 +218,14 @@ class ValignCommand(sublime_plugin.TextCommand):
 		self.alignment_chars = valign_settings.get("alignment_chars",
 			settings.get("va_alignment_chars", [
 				{
+					"char":        "from",
+					"alignment":   "right",
+					"left_space":  True,
+					"right_space": True,
+					"prefixes":    [],
+					"is_char":     False
+				},
+				{
 					# PHP arrays
 					"char":        "=>",
 					"alignment":   "right",
@@ -248,46 +256,46 @@ class ValignCommand(sublime_plugin.TextCommand):
 				}
 			])
 		)
-		
+
 		self.stop_empty          = valign_settings.get("stop_empty", settings.get("va_stop_empty", True))
 		self.tab_size            = int(settings.get("tab_size", 8))
 		self.use_spaces          = settings.get("translate_tabs_to_spaces")
 		self.treat_var_as_indent = settings.get("treat_var_as_indent", False)
-		
+
 		self.calculate_alignment_character(main_row)
-		
+
 		if self.alignment_char is None and not self.align_words: return
-		
+
 		self.rows = []
-		
+
 		for select in selection:
 			# Store some useful stuff.
 			lines     = view.lines(select)
 			start_row = view.rowcol(lines[0].a)[0]
-			
+
 			# Bail if the start row is already in the rows array.
 			if start_row in self.rows: continue
-			
+
 			# Bail if our start row is empty.
 			if len(self.get_line_string_for_row(start_row).strip()) == 0: continue
-			
+
 			# Calculate the rows that are on the same indentation level
 			calculated_rows = self.expand_rows_to_indentation(start_row)
-			
+
 			# Filter the rows if they contain the alignment character
 			calculated_rows = self.adjust_rows_for_alignment_character(calculated_rows, start_row)
-			
+
 			# Add the filtered rows to the rows
 			self.rows.extend(calculated_rows)
-		
+
 		# Bail that there are not duplicates in the rows
 		self.rows = ordered_remove_duplicates(self.rows)
-		
+
 		# Bail if we have no rows
 		if len(self.rows) == 0: return
-		
+
 		# Normalize the rows to get consistent formatting for alignment.
 		self.normalize_rows(edit)
-		
+
 		# If we have valid rows, align them.
 		if len(self.rows) > 0: self.align_rows(edit)
